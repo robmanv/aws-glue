@@ -3,11 +3,11 @@ import boto3
 # Substitua pelos seus valores
 database_name = "database_robson"
 table_name = "tabela_robson"
-bucket_name = "bucket-robson"
+bucket_name = "bucket-robson-glue"
 s3_path = f"s3://{bucket_name}/databases/"
 
 # Substitua pela região desejada (por exemplo, "us-east-1")
-region = "us-east-1"
+region = "sa-east-1"
 
 # Inicialize o cliente S3 com a região especificada
 s3 = boto3.client('s3', region_name=region)
@@ -20,7 +20,7 @@ except Exception as e:
     if e.response['Error']['Code'] == '404':
         print(f'O bucket {bucket_name} não existe e será criado.')
         try:
-            s3.create_bucket(Bucket=bucket_name)
+            s3.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': region})
             print(f'O bucket {bucket_name} foi criado na região {region}.')
         except Exception as e:
             print(f'Ocorreu um erro ao criar o bucket: {e}')
@@ -99,10 +99,10 @@ columns = ["Name", "Age"]
 df = spark.createDataFrame(data, columns)
 
 # Escreva o DataFrame como um arquivo Parquet
-df.write.mode("overwrite").parquet(path="s3://bucket-robson/databases/")
+df.write.mode("overwrite").parquet(path="s3://bucket-robson-glue/databases/")
 
 # Registre o DataFrame como uma tabela no AWS Glue Data Catalog
-df.write.format("parquet").mode("overwrite").option("path", "s3://bucket-robson/databases/").saveAsTable(f"{database_name}.{table_name}")
+df.write.format("parquet").mode("overwrite").option("path", "s3://bucket-robson-glue/databases/").saveAsTable(f"{database_name}.{table_name}")
 
 # Execute uma consulta SQL para selecionar todos os dados da tabela
 df = spark.sql(f"SELECT * FROM {database_name}.{table_name}")
